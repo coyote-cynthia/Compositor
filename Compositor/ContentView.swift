@@ -472,17 +472,19 @@ private struct ArrowStepping: ViewModifier {
     }
 }
 
-extension View {
+extension ToolbarContent {
     /// Hides the shared toolbar background where the macOS 26 API exists.
-    @ViewBuilder
-    func sharedBackgroundHiddenIfAvailable() -> some View {
+    @ToolbarContentBuilder
+    func sharedBackgroundHiddenIfAvailable() -> some ToolbarContent {
         if #available(macOS 26.0, *) {
             sharedBackgroundVisibility(.hidden)
         } else {
             self
         }
     }
+}
 
+extension View {
     /// Up and Down step this field's value; each field's own binding keeps it in range.
     func arrowSteps(_ step: Double = 1, value: @escaping () -> Double, change: @escaping (Double) -> Void) -> some View {
         modifier(ArrowStepping(step: step, value: value, change: change))
