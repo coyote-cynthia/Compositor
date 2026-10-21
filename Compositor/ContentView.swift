@@ -380,7 +380,11 @@ private struct PanelResizeEdge: View {
     var body: some View {
         Divider().overlay {
             Color.clear.frame(width: 8).contentShape(Rectangle())
-                .pointerStyle(.columnResize)
+                // `pointerStyle(.columnResize)` was introduced in macOS 15. Use AppKit's cursor API so the
+                // divider keeps the same affordance on macOS 14.
+                .onHover { hovering in
+                    (hovering ? NSCursor.resizeLeftRight : NSCursor.arrow).set()
+                }
                 .gesture(DragGesture(minimumDistance: 1, coordinateSpace: .global)
                     .onChanged { value in
                         let start = startWidth ?? width
