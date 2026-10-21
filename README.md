@@ -84,8 +84,14 @@ brew install --cask robbietilton-compositor
 
 ## Requirements
 
-- macOS 26.0 or later on a Mac with Apple silicon
-- Xcode 26 or later (to build from source)
+- This branch targets macOS 14.0 or later on Intel Macs (x86_64). Compatibility is experimental until a cloud build and testing on macOS 14 succeed.
+- Xcode 26 or later (to build from source); the build machine can run a newer macOS than the target Mac.
+
+### Experimental Intel package
+
+Push the `codex/intel-macos14` branch to your own fork. The **Build Intel macOS 14** Actions workflow builds a Release app and uploads a ZIP and DMG as an artifact. Download the artifact from the successful workflow run and extract it before opening the DMG.
+
+These personal test builds are ad-hoc signed, not Apple-notarized. They disable upstream update checks so an official Apple silicon build cannot replace the compatibility build. A successful build still requires launch, editing, save/reopen, and export checks on macOS 14.
 
 ## Translations
 

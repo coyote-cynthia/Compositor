@@ -317,7 +317,6 @@ struct JPEGPreview: View {
     let pixelHeight: Int
     @Binding var zoom: Double?
     @Environment(\.displayScale) private var displayScale
-    @State private var position = ScrollPosition()
     @State private var offset = CGPoint.zero
     @State private var dragStart: CGPoint?
 
@@ -332,36 +331,45 @@ struct JPEGPreview: View {
     }
 
     var body: some View {
-        GeometryReader { geometry in
-            if let zoom {
-                let size = shownSize(zoom)
-                ScrollView([.horizontal, .vertical]) {
-                    // Nearest-neighbor from 100% up, so each pixel of the JPEG and its artifacts shows as it is.
-                    Image(decorative: image, scale: 1).resizable().interpolation(zoom >= 1 ? .none : .high)
-                        .frame(width: size.width, height: size.height)
-                        .background { Self.checkerboard }
-                        .frame(minWidth: geometry.size.width, minHeight: geometry.size.height)
-                }
-                .scrollIndicators(.visible)
-                .scrollPosition($position)
-                .onScrollGeometryChange(for: CGPoint.self, of: { $0.contentOffset }) { _, new in offset = new }
-                .gesture(DragGesture(minimumDistance: 1)
-                    .onChanged { drag in
-                        let start = dragStart ?? offset
-                        dragStart = start
-                        position.scrollTo(point: CGPoint(x: start.x - drag.translation.width, y: start.y - drag.translation.height))
+        ScrollViewReader { proxy in
+            GeometryReader { geometry in
+                if let zoom {
+                    let size = shownSize(zoom)
+                    ScrollView([.horizontal, .vertical]) {
+                        // Nearest-neighbor from 100% up, so each pixel of the JPEG and its artifacts shows as it is.
+                        Image(decorative: image, scale: 1).resizable().interpolation(zoom >= 1 ? .none : .high)
+                            .frame(width: size.width, height: size.height)
+                            .background { Self.checkerboard }
+                            .frame(minWidth: geometry.size.width, minHeight: geometry.size.height)
+                            .background(GeometryReader { content in
+                                Color.clear.preference(key: JPEGPreviewOffsetKey.self, value: CGPoint(
+                                    x: max(0, -content.frame(in: .named("jpegPreviewScroll")).minX),
+                                    y: max(0, -content.frame(in: .named("jpegPreviewScroll")).minY)))
+                            })
+                            .id("jpegPreviewImage")
                     }
-                    .onEnded { _ in dragStart = nil })
-                .onTapGesture(count: 2) { self.zoom = nil }
-                .onAppear { keepCentered(from: nil, to: zoom, in: geometry.size) }
-                .onChange(of: zoom) { old, new in keepCentered(from: old, to: new, in: geometry.size) }
-                .pointerStyle(dragStart == nil ? .grabIdle : .grabActive)
-            } else {
-                Image(decorative: image, scale: 1).resizable().interpolation(.high).scaledToFit()
-                    .background { Self.checkerboard }
-                    .frame(width: geometry.size.width, height: geometry.size.height)
-                    .contentShape(Rectangle())
-                    .onTapGesture(count: 2) { self.zoom = 1 }
+                    .coordinateSpace(name: "jpegPreviewScroll")
+                    .scrollIndicators(.visible)
+                    .onPreferenceChange(JPEGPreviewOffsetKey.self) { offset = $0 }
+                    .gesture(DragGesture(minimumDistance: 1)
+                        .onChanged { drag in
+                            let start = dragStart ?? offset
+                            dragStart = start
+                            scroll(to: CGPoint(x: start.x - drag.translation.width, y: start.y - drag.translation.height),
+                                   content: size, viewport: geometry.size, using: proxy)
+                        }
+                        .onEnded { _ in dragStart = nil })
+                    .onTapGesture(count: 2) { self.zoom = nil }
+                    .onAppear { keepCentered(from: nil, to: zoom, in: geometry.size, using: proxy) }
+                    .onChange(of: zoom) { old, new in keepCentered(from: old, to: new, in: geometry.size, using: proxy) }
+                    .pointerStyle(dragStart == nil ? .grabIdle : .grabActive)
+                } else {
+                    Image(decorative: image, scale: 1).resizable().interpolation(.high).scaledToFit()
+                        .background { Self.checkerboard }
+                        .frame(width: geometry.size.width, height: geometry.size.height)
+                        .contentShape(Rectangle())
+                        .onTapGesture(count: 2) { self.zoom = 1 }
+                }
             }
         }
     }
@@ -386,7 +394,7 @@ struct JPEGPreview: View {
     }
 
     /// Zooming keeps the middle of the view on the same part of the image; coming from Fit, it starts at the center.
-    private func keepCentered(from old: Double?, to new: Double?, in view: CGSize) {
+    private func keepCentered(from old: Double?, to new: Double?, in view: CGSize, using proxy: ScrollViewProxy) {
         guard let new else { return }
         let size = shownSize(new)
         var middle = CGPoint(x: size.width / 2, y: size.height / 2)
@@ -396,7 +404,17 @@ struct JPEGPreview: View {
             let fy = before.height > 0 ? (offset.y + min(view.height, before.height) / 2) / before.height : 0.5
             middle = CGPoint(x: fx * size.width, y: fy * size.height)
         }
-        position.scrollTo(point: CGPoint(x: min(max(0, middle.x - view.width / 2), max(0, size.width - view.width)),
-                                         y: min(max(0, middle.y - view.height / 2), max(0, size.height - view.height))))
+        scroll(to: CGPoint(x: middle.x - view.width / 2, y: middle.y - view.height / 2), content: size, viewport: view, using: proxy)
     }
+
+    private func scroll(to point: CGPoint, content: CGSize, viewport: CGSize, using proxy: ScrollViewProxy) {
+        let x = min(1, max(0, point.x / max(1, content.width - viewport.width)))
+        let y = min(1, max(0, point.y / max(1, content.height - viewport.height)))
+        withAnimation(nil) { proxy.scrollTo("jpegPreviewImage", anchor: UnitPoint(x: x, y: y)) }
+    }
+}
+
+private struct JPEGPreviewOffsetKey: PreferenceKey {
+    static let defaultValue = CGPoint.zero
+    static func reduce(value: inout CGPoint, nextValue: () -> CGPoint) { value = nextValue() }
 }

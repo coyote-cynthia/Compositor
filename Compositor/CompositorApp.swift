@@ -101,6 +101,7 @@ struct CompositorApp: App {
                 Group {
                     CommandGroup(after: .appInfo) {
                         Button("Check for Updates…") { applicationDelegate.updater.checkForUpdates() }
+                            .disabled(!applicationDelegate.updatesEnabled)
                     }
                     CommandGroup(after: .toolbar) {
                         Button("Search Commands…") {

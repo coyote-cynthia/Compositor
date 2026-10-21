@@ -10,6 +10,7 @@ final class CompositorApplicationDelegate: NSObject, NSApplicationDelegate {
     /// Started only after launch: its first-run prompt, shown during launch, kept the editor window from ever opening.
     private let updateDriver = UpdateDriver()
     private let updaterDelegate = UpdaterDelegate()
+    var updatesEnabled: Bool { Bundle.main.object(forInfoDictionaryKey: "CompositorDisableUpdates") as? Bool != true }
     lazy var updater: SPUUpdater = {
         let updater = SPUUpdater(hostBundle: .main, applicationBundle: .main, userDriver: updateDriver, delegate: updaterDelegate)
         updateDriver.updater = updater
@@ -83,6 +84,7 @@ final class CompositorApplicationDelegate: NSObject, NSApplicationDelegate {
             MainActor.assumeIsolated { Self.removeIfSystemExtra(at: index, in: menu) }
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
+            guard self?.updatesEnabled == true else { return }
             do { try self?.updater.start() } catch { NSLog("Sparkle didn't start: \(error)") }
             #if DEBUG
             // Trying an update against a local feed: check straight away.

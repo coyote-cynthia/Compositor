@@ -1,0 +1,62 @@
+name: Build Intel macOS 14
+
+on:
+  push:
+    branches: [codex/intel-macos14]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: intel-package-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  package:
+    runs-on: macos-15-intel
+    timeout-minutes: 60
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.1.1.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Intel release
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild -version
+          xcodebuild build -project Compositor.xcodeproj -scheme Compositor \
+            -configuration Release -destination 'generic/platform=macOS' \
+            -derivedDataPath build -onlyUsePackageVersionsFromResolvedFile \
+            ARCHS=x86_64 ONLY_ACTIVE_ARCH=NO MACOSX_DEPLOYMENT_TARGET=14.0 \
+            CODE_SIGNING_ALLOWED=NO DEVELOPMENT_TEAM= 2>&1 | tee build.log
+      - name: Package personal test build
+        shell: bash
+        run: |
+          set -euo pipefail
+          app=build/Build/Products/Release/Compositor.app
+          /usr/libexec/PlistBuddy -c 'Add :CompositorDisableUpdates bool true' "$app/Contents/Info.plist"
+          /usr/libexec/PlistBuddy -c 'Set :SUEnableAutomaticChecks false' "$app/Contents/Info.plist"
+          codesign --force --deep --sign - "$app"
+          codesign --verify --deep --strict "$app"
+          test "$(lipo -archs "$app/Contents/MacOS/Compositor")" = x86_64
+          test "$(/usr/libexec/PlistBuddy -c 'Print :LSMinimumSystemVersion' "$app/Contents/Info.plist")" = 14.0
+          mkdir -p dist build/dmg-stage
+          ditto -c -k --keepParent "$app" dist/Compositor-Intel-macOS14.zip
+          ditto "$app" build/dmg-stage/Compositor.app
+          ln -s /Applications build/dmg-stage/Applications
+          hdiutil create -volname 'Compositor Intel' -srcfolder build/dmg-stage \
+            -ov -format UDZO dist/Compositor-Intel-macOS14.dmg
+          shasum -a 256 dist/*.zip dist/*.dmg > dist/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Compositor-Intel-macOS14
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: intel-build-log
+          path: build.log
+          retention-days: 14
