@@ -47,7 +47,6 @@ struct NavigatorMinimap: View {
             .gesture(DragGesture(minimumDistance: 0).onChanged { value in
                 session.viewport.centerView(on: geometry.documentPoint(for: value.location), documentSize: document.size)
             })
-            .pointerStyle(.default)
             .accessibilityElement()
             .accessibilityLabel("Navigator")
             .accessibilityHint("Click or drag to move the view")

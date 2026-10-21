@@ -362,7 +362,6 @@ struct JPEGPreview: View {
                     .onTapGesture(count: 2) { self.zoom = nil }
                     .onAppear { keepCentered(from: nil, to: zoom, in: geometry.size, using: proxy) }
                     .onChange(of: zoom) { old, new in keepCentered(from: old, to: new, in: geometry.size, using: proxy) }
-                    .pointerStyle(dragStart == nil ? .grabIdle : .grabActive)
                 } else {
                     Image(decorative: image, scale: 1).resizable().interpolation(.high).scaledToFit()
                         .background { Self.checkerboard }
