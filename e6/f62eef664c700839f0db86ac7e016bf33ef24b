@@ -1,0 +1,19 @@
+Compositor/ContentView.swift
+  s_1e5eb4fb1affbd::t_b99bb357de26e7 192-205
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "e6f62eef664c700839f0db86ac7e016bf33ef24b",
+  "prompts": {},
+  "sessions": {
+    "s_1e5eb4fb1affbd": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a15e91-5279-74c1-9f73-89322c99d70c",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "wangqinmin131 <779557608@qq.com>"
+    }
+  }
+}
