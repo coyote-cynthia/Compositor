@@ -1,0 +1,35 @@
+Compositor/Document/CameraRawShadows.swift
+  s_1e5eb4fb1affbd::t_7623aee9deef94 58-62
+Compositor/IO/ImageImporter.swift
+  s_1e5eb4fb1affbd::t_a1803dc2900d99 106-111
+Compositor/IO/RawImporter.swift
+  s_1e5eb4fb1affbd::t_7e98f353fabeba 109-113,121-125,153-155
+Compositor/Rendering/EditorCanvas.swift
+  s_1e5eb4fb1affbd::t_7cdba6a16a329b 1482,1486-1494
+Compositor/Rendering/InlineTextEditor.swift
+  s_1e5eb4fb1affbd::t_414d132a2d3f52 375-384
+Compositor/Rendering/MetalCameraRawLookup.swift
+  s_1e5eb4fb1affbd::t_f97fa5dfde802e 3,18
+Compositor/Rendering/TransformOverlay.swift
+  s_1e5eb4fb1affbd::t_a0203847cdb4cd 47-51
+Compositor/UI/BlendModePicker.swift
+  s_1e5eb4fb1affbd::t_a9f855b5c2f947 20
+Compositor/UI/TypeControls.swift
+  s_1e5eb4fb1affbd::t_7f2723732ba111 159
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "d935e0ecd163e7bb48da8ba5377c21aa90b3e794",
+  "prompts": {},
+  "sessions": {
+    "s_1e5eb4fb1affbd": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a15e91-5279-74c1-9f73-89322c99d70c",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "wangqinmin131 <779557608@qq.com>"
+    }
+  }
+}
