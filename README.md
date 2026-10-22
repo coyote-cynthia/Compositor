@@ -1,21 +1,40 @@
-# Compositor
+# Compositor — Intel / macOS 14 Compatibility Fork
 
-Adobe Photoshop costs too much and tools like GIMP don’t feel familiar enough for me to stay in flow. That’s why I built Compositor.
+这是 [coyote-cynthia/Compositor](https://github.com/coyote-cynthia/Compositor) 维护的实验性兼容分支，基于 [robbietilton/Compositor](https://github.com/robbietilton/Compositor) 的开源图像编辑器。原作者及贡献者保留原有署名，项目继续遵循 MIT 许可证。
 
-The goal was to create a full-featured image editor that is completely free and open source. I used to use Photoshop for compositing and post-processing, so Compositor is built around that workflow - with the tools needed to create a pixel-perfect final image.
+本分支保留 Swift、SwiftUI、AppKit 和 Metal 架构，目标是让 Intel Mac（x86_64）上的 macOS 14 使用 Compositor。它不是上游官方发行版，也不是跨平台重写。
 
-Because it’s open source, you can download the Xcode project and add, remove, or modify any feature to fit your workflow.
+## 下载与安装
 
-## Installation
+请从 **[本仓库 Releases](https://github.com/coyote-cynthia/Compositor/releases)** 下载 Intel 兼容包。首个版本为 `v1.5.4-intel-macos14.1`，标记为 **Pre-release**。
 
-### Download
-Get Compositor from [robbietilton.com/compositor](https://robbietilton.com/compositor), or download the latest release directly from [GitHub Releases](https://github.com/robbietilton/Compositor/releases/latest).
+- `Compositor-Intel-macOS14.dmg`：推荐安装包，打开后把应用拖入 Applications。
+- `Compositor-Intel-macOS14.zip`：应用压缩包。
+- `SHA256SUMS.txt`：下载完整性校验。在三个文件所在目录执行 `shasum -a 256 -c SHA256SUMS.txt`。
 
-### Homebrew
+安装包采用临时签名（ad-hoc），没有 Apple Developer ID 签名或公证，macOS 可能拦截首次打开。确认下载来源后可通过系统“隐私与安全性”中的允许打开选项处理。
 
-```sh
-brew install --cask robbietilton-compositor
-```
+上游 Homebrew 配方和上游 Releases 不提供本分支的 Intel 兼容包。本包已禁用上游自动更新，请从本仓库手动下载后续版本。
+
+## 当前验证状态
+
+- 应用版本：1.5.4，构建号 50；兼容发行标签独立于应用内版本。
+- 源码分支：`codex/intel-macos14`。
+- 目标：Intel x86_64，最低 macOS 14.0。
+- [提交 af58986 的 Release 编译与打包](https://github.com/coyote-cynthia/Compositor/actions/runs/39711588199)成功，生成 DMG 和 ZIP。
+- 下载后的 SHA-256 和 DMG 镜像完整性验证通过。
+- [Verify 工作流](https://github.com/coyote-cynthia/Compositor/actions/runs/39711588573)未通过：`DeepLayerTests.swift` 有类型检查超时，截图测试报告应用未加载 accessibility。
+- 尚未完成 macOS 14.1 实机启动、编辑、保存重开与导出验收；构建成功不代表全部功能已验证。
+
+## 兼容改动与限制
+
+- 替换或保护 macOS 15/26 专用 UI API，保留普通工具栏和旧系统可用的缩放光标。
+- Metal 缓冲区使用 macOS 14 可用的 `OSAllocatedUnfairLock`。
+- 修复 PDF 导入比例和 Camera Raw 阴影系数的类型检查问题。
+- macOS 26 以下禁用 RAW Highlight Recovery，其他 RAW 功能仍需实机验证。
+- 首次窗口使用默认尺寸；部分新版工具栏外观、斜向/旋转缩放光标与上游不同。
+
+以下为继承自上游的功能说明，不表示每项都已在本兼容版本验收。
 
 ## Features
 
@@ -77,40 +96,35 @@ brew install --cask robbietilton-compositor
 - Keep working while a project saves
 - Photoshop-style keyboard shortcuts throughout, remappable in Edit > Keyboard Shortcuts
 - Drag a number's label to scrub its value, as in Photoshop
-- Automatic updates, signed and notarized
+- This fork disables upstream automatic updates; compatibility packages use ad-hoc signing and are not notarized
 
 ### Works with AI agents
 - AI agents and scripts can build and edit projects directly: a `.comp` is a folder of PNG layers and a manifest, and an open project updates live as it's written. See [Writing Compositor projects](docs/writing-comp-files.md)
 
-## Requirements
+## 构建
 
-- This branch targets macOS 14.0 or later on Intel Macs (x86_64). Compatibility is experimental until a cloud build and testing on macOS 14 succeed.
-- Xcode 26 or later (to build from source); the build machine can run a newer macOS than the target Mac.
+本分支的 CI 使用 `macos-15-intel` 和 Xcode 26.1.1，目标系统设为 macOS 14.0。构建机版本与最低运行系统版本是两个独立设置；不要仅为支持 macOS 14 而降低 Swift 编译器版本。
 
-### Experimental Intel package
+```sh
+xcodebuild build -project Compositor.xcodeproj -scheme Compositor \
+  -configuration Release -destination 'generic/platform=macOS' \
+  -derivedDataPath build -onlyUsePackageVersionsFromResolvedFile \
+  ARCHS=x86_64 ONLY_ACTIVE_ARCH=NO MACOSX_DEPLOYMENT_TARGET=14.0 \
+  CODE_SIGNING_ALLOWED=NO DEVELOPMENT_TEAM=
+```
 
-Push the `codex/intel-macos14` branch to your own fork. The **Build Intel macOS 14** Actions workflow builds a Release app and uploads a ZIP and DMG as an artifact. Download the artifact from the successful workflow run and extract it before opening the DMG.
+完整打包步骤见 [.github/workflows/build-intel.yml](.github/workflows/build-intel.yml)。该工作流生成 DMG、ZIP 和 SHA-256 文件。测试工作流使用相同 Intel 运行器和 Xcode 版本。
 
-These personal test builds are ad-hoc signed, not Apple-notarized. They disable upstream update checks so an official Apple silicon build cannot replace the compatibility build. A successful build still requires launch, editing, save/reopen, and export checks on macOS 14.
+## 发布
 
-## Translations
+兼容版本发布至本仓库，使用独立标签并在实机验收前标为 Pre-release。发行说明应记录实际构建提交、Actions 链接、已知问题及产物校验值。文档可以晚于二进制构建提交，必须明确区分。
 
-Compositor is English only for now, and translation pull requests aren't being accepted. It's maintained by one person, every new string would need translating from then on, and translations in languages I don't read can't be reviewed. I'll revisit this once the app settles; until then, please don't open localization PRs.
+首个发行说明见 [docs/releases/v1.5.4-intel-macos14.1.md](docs/releases/v1.5.4-intel-macos14.1.md)。
 
-## Building
+`scripts/release.sh` 是上游的 Developer ID 签名、公证发布流程；本分支目前使用 Actions 的个人测试包流程。
 
-Open `Compositor.xcodeproj` and run the **Compositor** scheme.
+## 语言与许可证
 
-## Releasing
+应用界面目前为英文，本文档提供中文说明。
 
-`scripts/release.sh` builds a Release version, signs it with Developer ID, notarizes and staples it, and packages it into `dist/Compositor-<version>.dmg`.
-
-It needs, all kept outside this repository:
-
-- a **Developer ID Application** certificate in the login keychain
-- notarization credentials saved with `xcrun notarytool store-credentials "compositor-notary" …`
-- [`create-dmg`](https://github.com/create-dmg/create-dmg) (`brew install create-dmg`)
-
-## License
-
-MIT — see [LICENSE](LICENSE).
+MIT — 见 [LICENSE](LICENSE)。感谢 [robbietilton/Compositor](https://github.com/robbietilton/Compositor) 原作者和所有贡献者。
