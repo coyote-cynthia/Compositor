@@ -1,6 +1,6 @@
 import Foundation
 import Metal
-import Synchronization
+import os
 
 /// The existing composed color table on Metal. Values close to an 8-bit rounding boundary are repaired by
 /// the CPU's double-precision lookup, so a precision difference cannot accumulate through later effects.
@@ -15,7 +15,7 @@ nonisolated final class MetalCameraRawLookup: Sendable {
         let uncertain: MTLBuffer
         let lookup: MTLBuffer
     }
-    private let buffers = Mutex<Buffers?>(nil)
+    private let buffers = OSAllocatedUnfairLock<Buffers?>(initialState: nil)
 
     /// Called on a worker when a Camera Raw session closes, so large scratch buffers don't remain resident.
     func discardBuffers() { buffers.withLock { $0 = nil } }
